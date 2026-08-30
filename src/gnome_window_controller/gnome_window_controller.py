@@ -1119,7 +1119,7 @@ class GnomeWindowController:
         # Hard fallback: derive from the windows list if the extension gave us nothing usable.
         try:
             wins = self.list_windows()
-        except DBusError, TypeError, ValueError:
+        except (DBusError, TypeError, ValueError):
             return None
         return self._focused_from_list(wins) or (wins[0] if wins else None)
 
@@ -1143,7 +1143,7 @@ class GnomeWindowController:
         if windows is None:
             try:
                 windows = self.list_windows()
-            except DBusError, TypeError, ValueError:
+            except (DBusError, TypeError, ValueError):
                 return None
         return next((w for w in windows if any(bool(w.get(k)) for k in FOCUS_KEYS)), None)
 
@@ -1358,7 +1358,7 @@ class GnomeWindowController:
                 continue
             try:
                 det = self.details(wid, force_refresh=force_refresh)
-            except DBusError, TypeError:
+            except (DBusError, TypeError):
                 # Leave as-is if Details() fails for this entry.
                 continue
             monitor = _as_int(det.get("monitor"))
@@ -1392,7 +1392,7 @@ class GnomeWindowController:
             )
             state = self._deep_unpack(raw)
             return list(state[1]), list(state[2])
-        except DBusError, IndexError, TypeError, ValueError:
+        except (DBusError, IndexError, TypeError, ValueError):
             return None
 
     @staticmethod
@@ -1429,7 +1429,7 @@ class GnomeWindowController:
                     if isinstance(properties, dict) and properties.get("is-current"):
                         sizes[connector] = (_as_int(mode[1]) or 0, _as_int(mode[2]) or 0)
                         break
-            except IndexError, TypeError, ValueError:
+            except (IndexError, TypeError, ValueError):
                 continue
         return sizes
 
@@ -1479,7 +1479,7 @@ class GnomeWindowController:
         for index, entry in enumerate(logical):
             try:
                 connectors = [str(m[0]) for m in entry[5] if m] if len(entry) > 5 else []
-            except IndexError, TypeError:
+            except (IndexError, TypeError):
                 connectors = []
 
             scale = (
@@ -1622,7 +1622,7 @@ class GnomeWindowController:
 
         try:
             det = self.details(wid)
-        except DBusError, TypeError:
+        except (DBusError, TypeError):
             return None
         return _as_int(det.get("monitor"))
 
@@ -1858,7 +1858,7 @@ class GnomeWindowController:
                 capture_output=True,
                 text=True,
             )
-        except FileNotFoundError, OSError:
+        except (FileNotFoundError, OSError):
             return None
 
         if cmd.returncode != 0:
@@ -2142,7 +2142,7 @@ class GnomeWindowController:
                     timeout=timeout,
                     stderr=subprocess.DEVNULL,
                 )
-            except subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired:
+            except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
                 continue
             text = out.decode("utf-8", errors="replace")
             if text:
@@ -2169,7 +2169,7 @@ class GnomeWindowController:
                 capture_output=True,
                 text=True,
             )
-        except subprocess.CalledProcessError, FileNotFoundError:
+        except (subprocess.CalledProcessError, FileNotFoundError):
             return None
 
         return cmd.stdout

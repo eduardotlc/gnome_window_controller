@@ -81,7 +81,9 @@ indent-width = 4
 fix = true
 include = ["*.py"]
 line-length = 100
-target-version = "py314"
+# No `target-version`: ruff then reads `project.requires-python`, so the lint target can never
+# drift from what the package claims to support. Pinning it to py314 here was how ten PEP 758
+# `except A, B:` clauses passed lint and shipped in a wheel declaring >=3.12.
 exclude = [ "**/.pytest_cache/**", "**/.benchamarks/**", "**/__pycache__/**", "**/shell_extension/**"]
 
 [tool.ruff.format]
