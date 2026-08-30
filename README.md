@@ -35,7 +35,11 @@ focus changing (left/right/up/down), there is the standalone gnome extension
 
 5.4 [Colored Output](#colored-output)
 
-6. [Acknowledgments](#Acknowledgments)
+6. [Extras](#extras)
+
+6.1 [Shell Completions](#shell-completions)
+
+7. [Acknowledgments](#Acknowledgments)
 
 ---
 
@@ -114,52 +118,6 @@ gnome-window-controller [command] [flags]
 > has to live under `~/.local/share/gnome-shell/extensions/`
 
 > [!NOTE] python pip install gets the `gnome-window-controller` command in `~/.local/bin`:
-
----
-
-## Shell Completions
-
-Completion files for both shells ship inside the package, under
-`src/gnome_window_controller/completions/` in a checkout, and beside the installed package
-otherwise.
-
-**Bash**
-
-```sh
-mkdir -p ~/.local/share/bash-completion/completions
-cp src/gnome_window_controller/completions/gnome-window-controller.bash \
-   ~/.local/share/bash-completion/completions/gnome-window-controller
-```
-
-The target file has to be named after the command — that is how `bash-completion` finds and
-loads it on first use.
-
-**zsh**
-
-```sh
-mkdir -p ~/.local/share/zsh/site-functions
-cp src/gnome_window_controller/completions/_gnome-window-controller \
-   ~/.local/share/zsh/site-functions/
-```
-
-and, in `~/.zshrc` **before** `compinit` runs:
-
-```zsh
-fpath=(~/.local/share/zsh/site-functions $fpath)
-```
-
-Both complete every flag, and the values each flag takes: `--chfocus` offers `monitor`, `win`,
-`right`, `left`, `up`, `down` and `last`, then narrows the second word to whatever the first one
-allows.
-`--focus` and `--exclude` complete against the `wm_class` of the windows **currently open**.
-
-> [!NOTE] Installed with pip instead of from a clone? The files are next to the installed
-> package:
->
-> ```sh
-> python -c 'import gnome_window_controller as m, pathlib as p;\
-> print(p.Path(m.__file__).parent / "completions")'
-> ```
 
 ---
 
@@ -283,7 +241,7 @@ GnomeWindowController(exclude_apps=("floorp", "Slack"))  # exactly these
 | `up` / `down`    | —                                   | move focus one monitor up/down, wrapping                |
 | `last`           | —                                   | focus the previously focused window                     |
 
-Every one of them honours `--exclude`.
+Everyone of them honors `--exclude`.
 
 **Monitor layouts**
 
@@ -367,6 +325,56 @@ gnome-window-controller --list-windows                  # auto: color only a rea
 GWC_COLORS=False gnome-window-controller --list-windows # same, from the environment
 ```
 
+---
+
+## Extras
+
+### Shell Completions
+
+Completion files for both shells ship inside the package, under
+`src/gnome_window_controller/completions/` in a checkout, and beside the installed package
+otherwise.
+
+**Bash**
+
+```sh
+mkdir -p ~/.local/share/bash-completion/completions
+cp src/gnome_window_controller/completions/gnome-window-controller.bash \
+   ~/.local/share/bash-completion/completions/gnome-window-controller
+```
+
+The target file has to be named after the command — that is how `bash-completion` finds and
+loads it on first use.
+
+**zsh**
+
+```sh
+mkdir -p ~/.local/share/zsh/site-functions
+cp src/gnome_window_controller/completions/_gnome-window-controller \
+   ~/.local/share/zsh/site-functions/
+```
+
+and, in `~/.zshrc` **before** `compinit` runs:
+
+```zsh
+fpath=(~/.local/share/zsh/site-functions $fpath)
+```
+
+Both complete every flag, and the values each flag takes: `--chfocus` offers `monitor`, `win`,
+`right`, `left`, `up`, `down` and `last`, then narrows the second word to whatever the first one
+allows.
+`--focus` and `--exclude` complete against the `wm_class` of the windows **currently open**.
+
+> [!NOTE] Installed with pip instead of from a clone? The files are next to the installed
+> package:
+>
+> ```sh
+> python -c 'import gnome_window_controller as m, pathlib as p;\
+> print(p.Path(m.__file__).parent / "completions")'
+> ```
+
+---
+
 ## Acknowledgments
 
 The gnome extensions from which this one wouldn't exist, huge thanks to:
@@ -376,8 +384,6 @@ The gnome extensions from which this one wouldn't exist, huge thanks to:
 - [Window Calls](https://github.com/ickyicky/window-calls)
 
 ## TODO
-
-- [ ] Bundle PyPI package
 
 - [ ] Upload gnome-extension
 
