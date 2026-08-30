@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.gnome-window-controller"
+          path="/org/gnome/shell/extensions/gnome-window-controller/">
+
+    <key name="enabled" type="b">
+      <default>true</default>
+      <summary>Draw the focused-window border</summary>
+      <description>Master switch. When off, no border is ever drawn.</description>
+    </key>
+
+    <key name="follow-focus" type="b">
+      <default>true</default>
+      <summary>Follow every focus change</summary>
+      <description>
+        When on, the border follows any focus change, including mouse clicks and alt-tab.
+        When off, it is drawn only for focus changes requested by the gnome_window_controller
+        commands over D-Bus.
+      </description>
+    </key>
+
+    <key name="color" type="s">
+      <default>'#993c5a'</default>
+      <summary>Border color</summary>
+      <description>Any CSS color St accepts, for example #993c5a or rgba(0,0,0,0.5).</description>
+    </key>
+
+    <key name="width" type="i">
+      <range min="0" max="32"/>
+      <default>3</default>
+      <summary>Border thickness in pixels</summary>
+      <description>Thickness of the border drawn around the focused window.</description>
+    </key>
+
+    <key name="radius" type="i">
+      <range min="0" max="64"/>
+      <default>12</default>
+      <summary>Border corner radius in pixels</summary>
+      <description>Corner rounding of the border.</description>
+    </key>
+
+    <key name="inset" type="i">
+      <range min="0" max="32"/>
+      <default>2</default>
+      <summary>Outward offset in pixels</summary>
+      <description>How far outside the window frame the border sits.</description>
+    </key>
+
+    <key name="duration-ms" type="i">
+      <range min="0" max="60000"/>
+      <default>0</default>
+      <summary>Visible duration in milliseconds</summary>
+      <description>How long the border stays up. Zero keeps it until focus moves away.</description>
+    </key>
+
+    <key name="fade-ms" type="i">
+      <range min="0" max="5000"/>
+      <default>220</default>
+      <summary>Fade-out duration in milliseconds</summary>
+      <description>Length of the fade used when the visible duration expires.</description>
+    </key>
+
+    <key name="skip-maximized" type="b">
+      <default>false</default>
+      <summary>Skip maximized windows</summary>
+      <description>Do not highlight windows that are maximized both horizontally and vertically.</description>
+    </key>
+
+    <key name="skip-fullscreen" type="b">
+      <default>true</default>
+      <summary>Skip fullscreen windows</summary>
+      <description>Do not highlight fullscreen windows.</description>
+    </key>
+
+    <key name="only-normal" type="b">
+      <default>true</default>
+      <summary>Only normal windows</summary>
+      <description>Restrict highlighting to normal toplevel windows, skipping dialogs and popups.</description>
+    </key>
+
+    <key name="config-migrated" type="b">
+      <default>false</default>
+      <summary>Legacy JSON config already imported</summary>
+      <description>
+        Internal flag. Set once the pre-GSettings highlight.json has been imported.
+      </description>
+    </key>
+
+  </schema>
+</schemalist>

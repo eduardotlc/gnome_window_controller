@@ -1,0 +1,119 @@
+[build-system]
+# 77 is the floor for PEP 639 (`license` as an SPDX string plus `license-files`).
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gnome-window-controller"
+description = "Control GNOME window focus from Python and the terminal, with a focused-window highlight."
+readme = "README.md"
+# 3.12 is a hard floor, not a preference: colors.py uses a PEP 695 `type` statement and
+# cli.py uses `match`, so older interpreters fail at parse time.
+requires-python = ">=3.12"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "eduardotlc", email = "eduardotcampos@hotmail.com" }]
+keywords = [
+  "gnome",
+  "wayland",
+  "window-manager",
+  "focus",
+  "dbus",
+  "gnome-shell-extension",
+  "multi-monitor",
+]
+dynamic = ["version"]
+
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Environment :: X11 Applications :: GTK",
+  "Intended Audience :: End Users/Desktop",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Desktop Environment :: Gnome",
+  "Topic :: Utilities",
+  "Typing :: Typed",
+]
+
+# PyGObject is imported lazily and is normally supplied by the distro
+# (python3-gobject on Fedora, python3-gi on Debian). It is listed so a fresh
+# environment resolves it; an existing system install already satisfies it.
+dependencies = ["PyGObject>=3.42"]
+
+[project.optional-dependencies]
+test = ["pytest>=8", "pytest-benchmark>=4"]
+dev = ["gnome-window-controller[test]", "build>=1", "ruff>=0.6", "twine>=5"]
+
+[project.scripts]
+gnome-window-controller = "gnome_window_controller.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/eduardotlc/gnome_window_controller"
+Repository = "https://github.com/eduardotlc/gnome_window_controller"
+Issues = "https://github.com/eduardotlc/gnome_window_controller/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.dynamic]
+version = { attr = "gnome_window_controller.__version__" }
+
+# The shell extension is not an accessory: it serves every window query as well as the border,
+# so the wheel is useless without it. `py.typed` is what makes the inline annotations visible to
+# type checkers in projects that import this one (PEP 561).
+[tool.setuptools.package-data]
+gnome_window_controller = [
+  "py.typed",
+  "completions/*",
+  "shell_extension/*/*.js",
+  "shell_extension/*/*.json",
+  "shell_extension/*/schemas/*.xml",
+  "shell_extension/*/schemas/gschemas.compiled",
+]
+
+[tool.ruff]
+indent-width = 4
+fix = true
+include = ["*.py"]
+line-length = 100
+target-version = "py314"
+exclude = [ "**/.pytest_cache/**", "**/.benchamarks/**", "**/__pycache__/**", "**/shell_extension/**"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = true
+docstring-code-line-length = 88
+skip-magic-trailing-comma = false
+preview = true
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "D", "UP", "B", "SIM", "ANN", "RUF", "N", "C4", "PTH"]
+ignore = ["ANN201", "ANN401", "D206", "D212", "D417", "E501", "W191"]
+preview = true
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.lint.pycodestyle]
+max-line-length = 100
+max-doc-length = 100
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+known-first-party = ["gnome_window_controller", "gi_utils"]
+
+[tool.ruff.lint.flake8-annotations]
+suppress-none-returning = true
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+# `pytest` with no arguments runs the unit tests and the doctests. The doctests talk to a live
+# GNOME Shell, so anywhere headless -- CI included -- wants `pytest tests/` instead.
+testpaths = ["tests", "src"]
+addopts = ["--doctest-modules"]

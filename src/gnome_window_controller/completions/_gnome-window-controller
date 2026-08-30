@@ -1,0 +1,112 @@
+#compdef gnome-window-controller gnome_window_controller
+#
+# Zsh completion for gnome-window-controller.
+#
+# Install: put this file in a directory on $fpath under this exact name, e.g.
+#   mkdir -p ~/.local/share/zsh/site-functions
+#   cp _gnome-window-controller ~/.local/share/zsh/site-functions/
+#   fpath=(~/.local/share/zsh/site-functions $fpath)   # before compinit, in ~/.zshrc
+#
+# @author eduardotc
+# @email eduardotcampos@hotmail.com
+
+# Window classes of the currently open windows, for --focus.
+#
+# Titles are deliberately left out: they change constantly and usually contain spaces, which a
+# completion cannot insert without quoting. A wm_class is a single stable token, which is what
+# --focus is normally given anyway.
+_gwc_window_names() {
+  local -a names
+  local cmd=${words[1]}
+  names=(${(f)"$($cmd --list-windows --json --color never 2>/dev/null | python3 -c '
+import json, sys
+
+try:
+    windows = json.load(sys.stdin)
+except (ValueError, TypeError):
+    sys.exit(0)
+
+names = {
+    str(w[key])
+    for w in windows
+    for key in ("wm_class", "wm_class_instance")
+    if isinstance(w, dict) and w.get(key)
+}
+print("\n".join(sorted(n for n in names if " " not in n)))
+' 2>/dev/null)"})
+  (( $#names )) || return 1
+  _describe -t windows 'open window' names
+}
+
+# Second --chfocus word. What is on offer depends on the first one, and right/left/last take none.
+_gwc_chfocus_secondary() {
+  case ${words[CURRENT-1]} in
+    monitor)
+      _values 'monitor window' \
+        'top[topmost window on that monitor]' \
+        'bottom[bottommost window on that monitor]'
+      ;;
+    win)
+      _values 'window' \
+        'same_app[next window of the focused window'\''s application]' \
+        'same_monitor[next window on the current monitor]' \
+        'same_monitor_down[next window on the current monitor]' \
+        'same_monitor_up[previous window on the current monitor]'
+      ;;
+    *)
+      # The directions and `last` take no modifier. Say so rather than completing nothing at
+      # all; typing `--` from here still brings up the remaining options.
+      _message -r "no modifier for \`--chfocus ${words[CURRENT-1]}\`; type -- for the options"
+      return 1
+      ;;
+  esac
+}
+
+_gnome_window_controller() {
+  _arguments -s -S \
+    '(- *)--help[show the help and exit]' \
+    '(- *)--version[show the version and exit]' \
+    '--list-windows[list every window with its details]' \
+    '--details-windows[list every window with the full detail record]' \
+    '--list-monitors[list logical monitors in physical left-to-right order]' \
+    '--json[emit query results as JSON instead of colored text]' \
+    '--color=[when to color the output]:when:((
+        auto\:"color only an interactive terminal (default)"
+        always\:"color even when piped"
+        never\:"never color"))' \
+    '--focus=[focus a window by wm_class, instance or title]:needle:_gwc_window_names::more:_gwc_window_names' \
+    '*--exclude=[never focus a window whose class or title contains NAME]:name:_gwc_window_names' \
+    '--scope=[which monitor --focus searches]:scope:((
+        any\:"every monitor"
+        current-monitor\:"the focused monitor only"
+        other-monitor\:"the other monitor only (default)"))' \
+    '--chfocus=[change focus]:command:((
+        monitor\:"a window on the other monitor"
+        win\:"another window on this monitor"
+        right\:"the monitor to the right"
+        left\:"the monitor to the left"
+        up\:"the monitor above"
+        down\:"the monitor below"
+        last\:"the previously focused window"))::modifier:_gwc_chfocus_secondary' \
+    '--highlight=[manage the focused-window border (default: status)]::action:((
+        status\:"show the current mode and options"
+        install\:"install and enable the shell extension"
+        uninstall\:"remove the shell extension"
+        on\:"enable the border"
+        off\:"disable the border"
+        flash\:"pulse the border around the focused window"
+        clear\:"remove the border now"))' \
+    '--highlight-mode=[when the border is drawn]:mode:((
+        always\:"every focus change, mouse clicks included"
+        commands\:"only focus changes made by this module"
+        off\:"never draw"))' \
+    '--highlight-color=[border color, e.g. #993c5a]:css color:' \
+    '--highlight-width=[border thickness]:pixels:' \
+    '--highlight-radius=[corner radius]:pixels:' \
+    '--highlight-inset=[outward offset from the window frame]:pixels:' \
+    '--highlight-duration=[milliseconds the border stays up; 0 until focus moves]:milliseconds:' \
+    '--show-focus[outline the focused window now, whatever the mode]' \
+    '--no-highlight[do not flash the border for windows focused by this run]'
+}
+
+_gnome_window_controller "$@"

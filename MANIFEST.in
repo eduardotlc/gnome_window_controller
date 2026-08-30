@@ -1,0 +1,11 @@
+# setuptools already puts pyproject.toml, README.md and LICENSE in the sdist. These are the
+# extras worth shipping so the tarball is enough to build, test and hack on offline.
+include DEVELOPMENT.md
+recursive-include tests *.py
+recursive-include .github *.yml
+recursive-include src/gnome_window_controller/completions *
+recursive-include src/gnome_window_controller/shell_extension *
+
+# Build noise that must never reach a distribution.
+global-exclude *.py[cod]
+global-exclude __pycache__

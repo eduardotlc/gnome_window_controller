@@ -1,0 +1,19 @@
+{
+  "uuid": "gnome-window-controller@eduardotcampos.hotmail.com",
+  "name": "Gnome Window Controller",
+  "description": "Shell-side backend for the gnome_window_controller Python module: lists, describes and activates windows, reports the focused one, and draws a colored border around it. Everything is exposed on org.gnome.Shell.Extensions.GnomeWindowController, so neither the Window Calls nor the Focused Window D-Bus extension is needed.",
+  "shell-version": [
+    "45",
+    "46",
+    "47",
+    "48",
+    "49",
+    "50"
+  ],
+  "session-modes": [
+    "user"
+  ],
+  "url": "https://github.com/eduardotcampos",
+  "version": 3,
+  "settings-schema": "org.gnome.shell.extensions.gnome-window-controller"
+}
