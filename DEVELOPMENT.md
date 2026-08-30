@@ -32,23 +32,160 @@ GNOME session skips itself.
 
 ---
 
-## Packaging
+## Packaging and Releasing
+
+The version is read from `src/gnome_window_controller/__init__.py`, so a release is a bump to
+`__version__` and nothing else. **A version number on PyPI can never be reused or replaced**, even
+after deleting the release — every mistake costs a version number, which is why the rehearsal on
+TestPyPI below is worth the five minutes.
+
+### 1. Accounts and 2FA
+
+Register on both, with the *same* username if you like — the two are entirely separate databases:
+
+- <https://pypi.org/account/register/>
+- <https://test.pypi.org/account/register/>
+
+Two-factor authentication is mandatory on PyPI. Add an authenticator app under
+**Account settings → Two factor authentication**, and save the recovery codes somewhere you can
+reach without your phone. You cannot create an API token until 2FA is on.
+
+### 2. Generate an API token
+
+A token is a password that carries its own scope, so it can be revoked without touching the
+account. Tokens are shown **once**, at creation.
+
+1. Go to <https://pypi.org/manage/account/token/> (and
+   <https://test.pypi.org/manage/account/token/> for the rehearsal).
+2. **Token name**: something you will recognise in six months, e.g. `laptop-gwc-release`.
+3. **Scope**: `Entire account`. A project-scoped token cannot exist for a project that has never
+   been uploaded — narrow it after the first release, see step 7.
+4. Copy the value. It starts with `pypi-` and is the *whole* credential.
+
+### 3. Add the token
+
+The token goes in `~/.pypirc`. The username is the literal string `__token__` for every token —
+it is not your account name.
 
 ```sh
-python -m build                      # sdist + wheel into dist/
-python -m twine check --strict dist/*  # the metadata and README checks PyPI applies
-python -m twine upload dist/*
+umask 077                      # so the file is created 0600, not world readable
+cat > ~/.pypirc <<'EOF'
+[distutils]
+index-servers =
+    pypi
+    testpypi
+
+[pypi]
+username = __token__
+password = pypi-AgEIcHlwaS5vcmc...      # the PyPI token
+
+[testpypi]
+repository = https://test.pypi.org/legacy/
+username = __token__
+password = pypi-AgENdGVzdC5weXBpLm9yZw...   # the TestPyPI token, a different one
+EOF
+chmod 600 ~/.pypirc
 ```
 
-The wheel has to carry the shell extension and the completions as package data; without the
-extension the module cannot talk to GNOME at all. To confirm a build did:
+For a one-off upload, or on a machine where you would rather not leave the token on disk,
+environment variables take precedence and need no file:
+
+```sh
+TWINE_USERNAME=__token__ TWINE_PASSWORD='pypi-...' python -m twine upload dist/*
+```
+
+> Never commit `~/.pypirc`, and never paste a token into an issue or a shell history you sync.
+> If one leaks, revoke it at <https://pypi.org/manage/account/> — revoking is instant and
+> generating a replacement costs nothing.
+
+### 4. Build
+
+```sh
+python -m pip install --upgrade build twine
+rm -rf dist/                          # stale artifacts get uploaded too; twine takes dist/*
+python -m build                       # sdist + wheel
+python -m twine check --strict dist/*  # the metadata and README rendering PyPI enforces
+```
+
+`build` runs in an isolated environment that installs only `setuptools`, so PyGObject is never
+needed to package the project — the version is read from the source by AST, not by importing it.
+
+Confirm the wheel carries the shell extension and the completions. Without the extension the
+module cannot talk to GNOME at all, and a wheel missing it installs perfectly and then does
+nothing:
 
 ```sh
 python -c 'import zipfile,glob; print(*sorted(zipfile.ZipFile(glob.glob("dist/*.whl")[0]).namelist()), sep="\n")'
 ```
 
-The version is read from `src/gnome_window_controller/__init__.py`, so a release is a bump to
-`__version__` and nothing else.
+### 5. Rehearse on TestPyPI
+
+```sh
+python -m twine upload -r testpypi dist/*
+```
+
+Then install it somewhere disposable. `--extra-index-url` matters: TestPyPI has no copy of
+PyGObject, so the dependency has to resolve from the real index.
+
+```sh
+python -m venv /tmp/gwc-test && /tmp/gwc-test/bin/pip install \
+    --index-url https://test.pypi.org/simple/ \
+    --extra-index-url https://pypi.org/simple/ \
+    gnome-window-controller
+/tmp/gwc-test/bin/gnome-window-controller --version
+```
+
+Check the rendered page at `https://test.pypi.org/project/gnome-window-controller/` — this is the
+last chance to catch a README that looks wrong.
+
+### 6. Upload
+
+```sh
+python -m twine upload dist/*
+```
+
+Verify from a clean environment:
+
+```sh
+python -m venv /tmp/gwc-real && /tmp/gwc-real/bin/pip install gnome-window-controller
+/tmp/gwc-real/bin/gnome-window-controller --version
+```
+
+### 7. Narrow the token
+
+Now that the project exists, replace the account-wide token with one scoped to it: create a new
+token at <https://pypi.org/manage/account/token/> with **Scope: Project → gnome-window-controller**,
+put it in `~/.pypirc`, and delete the account-wide one. A leak then costs one project rather than
+every project on the account.
+
+### Publishing from GitHub Actions instead
+
+`.github/workflows/publish.yml` uploads on a published GitHub release using **trusted
+publishing**: GitHub hands PyPI a short-lived OIDC token, PyPI exchanges it for an upload token
+that expires in fifteen minutes. There is no secret to store, leak or rotate.
+
+It has to be registered before the first run. Because the project does not exist on PyPI yet, use
+a *pending* publisher at <https://pypi.org/manage/account/publishing/>:
+
+| Field | Value |
+| --- | --- |
+| PyPI Project Name | `gnome-window-controller` |
+| Owner | `eduardotlc` |
+| Repository name | `gnome_window_controller` |
+| Workflow name | `publish.yml` |
+| Environment name | `pypi` |
+
+Then, in the repository, **Settings → Environments → New environment → `pypi`**. Adding a required
+reviewer there means a release waits for your approval before anything is uploaded.
+
+Releasing is then: bump `__version__`, commit, tag, and publish a GitHub release for that tag.
+
+```sh
+git tag -a v1.3.0 -m "v1.3.0" && git push origin v1.3.0
+gh release create v1.3.0 --generate-notes
+```
+
+Once the publisher has run once it stops being "pending" and becomes a normal one.
 
 ---
 
