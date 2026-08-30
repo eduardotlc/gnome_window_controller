@@ -71,7 +71,8 @@ focus changing (left/right/up/down), there is the standalone gnome extension
 
 - Python 3.11+ (`requires-python = ">=3.11"`).
 
-> [!NOTE] `PyGObject` is also a dependency, but is normally supplied by the distribution, case not,
+> [!NOTE]
+> `PyGObject` is also a dependency, but is normally supplied by the distribution, case not,
 > the better option is to install it from distro packages (dnf, apt, etc.) rather than letting
 > pip to compile it.
 
@@ -114,10 +115,12 @@ or
 gnome-window-controller [command] [flags]
 ```
 
-> [!NOTE] The Python package and the GNOME Shell extension are installed separately — the extension
+> [!NOTE]
+> The Python package and the GNOME Shell extension are installed separately — the extension
 > has to live under `~/.local/share/gnome-shell/extensions/`
 
-> [!NOTE] python pip install gets the `gnome-window-controller` command in `~/.local/bin`:
+> [!NOTE]
+> python pip install gets the `gnome-window-controller` command in `~/.local/bin`:
 
 ---
 
@@ -139,7 +142,8 @@ Focus left:
 /home/eduardotc/.local/bin/gnome-window-controller --chfocus left
 ```
 
-> [!IMPORTANT] gnome-shell's `PATH` does **not** include `~/.local/bin`, so give the
+> [!IMPORTANT]
+> gnome-shell's `PATH` does **not** include `~/.local/bin`, so give the
 > **absolute path** (substitute `/home/eduardotc` above with **your user home**)
 
 Back up and restore all custom shortcuts with:
@@ -305,7 +309,8 @@ gnome-window-controller --highlight on \
 | `--highlight-duration` | `0`       | ms to stay visible; `0` keeps it until focus moves    |
 | `--highlight-mode`     | `always`  | `always`, `commands` or `off` (see above)             |
 
-> [!NOTE] Any `--highlight-*` flag applies on its own — no `--highlight ACTION` needed.
+> [!NOTE]
+> Any `--highlight-*` flag applies on its own — no `--highlight ACTION` needed.
 
 Settings persist to `~/.config/gnome-window-controller/highlight.json` and are reloaded when the
 shell restarts.
@@ -365,8 +370,8 @@ Both complete every flag, and the values each flag takes: `--chfocus` offers `mo
 allows.
 `--focus` and `--exclude` complete against the `wm_class` of the windows **currently open**.
 
-> [!NOTE] Installed with pip instead of from a clone? The files are next to the installed
-> package:
+> [!NOTE]
+> Installed with pip instead of from a clone? The files are next to the installed package:
 >
 > ```sh
 > python -c 'import gnome_window_controller as m, pathlib as p;\
