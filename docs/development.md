@@ -372,43 +372,6 @@ mode is `off`).
 
 ---
 
-## Python API
-
-Imports of `gi` are lazy, so `--help` and `--version` never pay for them.
-
-```python
-from gnome_window_controller import GnomeWindowController, HighlightOptions
-
-ctl = GnomeWindowController()
-
-ctl.list_windows(with_monitor=True)   # list[dict]
-ctl.get_focused()                     # dict | None
-ctl.details(win_id)                   # dict, cached per call cycle
-ctl.monitor_order()                   # e.g. (1, 0, 2) — Mutter indices, left to right
-ctl.monitor_layout()                  # rects, scales, connectors
-
-ctl.focus_named_window("kitty")
-ctl.cycle_monitors(direction=1)
-ctl.focus_same_monitor_window()
-ctl.focus_same_name_window()
-ctl.focus_last_window()
-
-ctl.highlight.configure(HighlightOptions(color="#fabd2f", width=4))
-ctl.highlight.configure(HighlightOptions.from_mode("commands"))
-ctl.highlight.flash()                     # respects the mode
-ctl.highlight.show_focused()              # forces, even when the mode is off
-ctl.highlight.state()      # {'mode', 'border_visible', 'tracked_window_id', ...}
-```
-
-Failures raise `WindowControllerError`, with `DBusError` for unreachable extensions and
-`HighlightError` for highlight-specific problems.
-
-Monitor order is read from `org.gnome.Mutter.DisplayConfig` and sorted by physical position, so
-`--chfocus right`/`left` follow your actual layout instead of Mutter's arbitrary indices. It falls
-back to the `MONITOR_ORDER` constant if the layout cannot be read.
-
----
-
 ## Notes
 
 - `get_current_workspace_index()` reads the focused window's `workspace` field, which works

@@ -4,8 +4,8 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 build/
-docs/_build
 dist/
 *.egg-info/
 src/*.egg-info/
 **/shell_extension/*/schemas/gschemas.compiled
+docs/_build/

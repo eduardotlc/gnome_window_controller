@@ -47,7 +47,21 @@ dependencies = ["PyGObject>=3.42"]
 
 [project.optional-dependencies]
 test = ["pytest>=8", "pytest-benchmark>=4"]
-dev = ["gnome-window-controller[test]", "build>=1", "ruff>=0.6", "twine>=5"]
+docs = [
+  "sphinx>=8",
+  "furo>=2024.8",
+  # linkify turns bare URLs in the included Markdown into links.
+  "myst-parser[linkify]>=4",
+  "sphinx-copybutton>=0.5",
+  # Builds the CLI reference from the argparse parser, so it cannot drift from the program.
+  "sphinx-argparse>=0.5",
+]
+dev = [
+  "gnome-window-controller[test,docs]",
+  "build>=1",
+  "ruff>=0.6",
+  "twine>=5",
+]
 
 [project.scripts]
 gnome-window-controller = "gnome_window_controller.cli:main"
@@ -55,6 +69,7 @@ gnome-window-controller = "gnome_window_controller.cli:main"
 [project.urls]
 Homepage = "https://github.com/eduardotlc/gnome_window_controller"
 Repository = "https://github.com/eduardotlc/gnome_window_controller"
+Documentation = "https://gnome-window-controller.readthedocs.io/"
 Issues = "https://github.com/eduardotlc/gnome_window_controller/issues"
 
 [tool.setuptools.packages.find]
@@ -119,3 +134,4 @@ minversion = "8.0"
 # GNOME Shell, so anywhere headless -- CI included -- wants `pytest tests/` instead.
 testpaths = ["tests", "src"]
 addopts = ["--doctest-modules"]
+pythonpath = ["src"]

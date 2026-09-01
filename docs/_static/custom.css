@@ -1,0 +1,30 @@
+/* Small refinements on top of Furo. */
+
+/* numpydoc Parameters/Returns render as definition lists; give them room to breathe. */
+dl.field-list > dt {
+  font-weight: 600;
+}
+
+.sig-name {
+  font-weight: 700;
+}
+
+/* Signatures of long functions wrap rather than scroll off. */
+dt.sig {
+  overflow-wrap: anywhere;
+}
+
+/* The CLI reference is a wall of options; separate them clearly. */
+#cli-reference dl > dt {
+  margin-top: 0.85rem;
+}
+
+/* Tables in the included Markdown default to shrink-wrapped; let them use the column. */
+table.docutils {
+  width: 100%;
+}
+
+table.docutils td,
+table.docutils th {
+  vertical-align: top;
+}
