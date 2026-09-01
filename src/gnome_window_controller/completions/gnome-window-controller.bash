@@ -16,7 +16,7 @@
 
 _gwc_opts='
 --list-windows --details-windows --list-monitors --color --json
---focus --scope --exclude --chfocus
+--focus --scope --workspace --exclude --chfocus
 --highlight --highlight-mode --highlight-color --highlight-width --highlight-radius
 --highlight-inset --highlight-duration --show-focus --no-highlight
 --version --help
@@ -118,6 +118,12 @@ _gnome_window_controller() {
         --scope)
             [[ $argi == 1 ]] && {
                 mapfile -t COMPREPLY < <(compgen -W 'any current-monitor other-monitor' -- "$cur")
+                return 0
+            }
+            ;;
+        --workspace)
+            [[ $argi == 1 ]] && {
+                mapfile -t COMPREPLY < <(compgen -W 'current prefer-current any' -- "$cur")
                 return 0
             }
             ;;

@@ -53,7 +53,7 @@ focus changing (left/right/up/down), there is the standalone gnome extension
 
 - Given app name focusing
 
-- Same monitor app focus changing
+- Same monitor app focus changing (current workspace or include all)
 
 - Same app focus changing
 
@@ -69,7 +69,7 @@ focus changing (left/right/up/down), there is the standalone gnome extension
 
 - `glib-compile-schemas` (glib2-devel)
 
-- Python 3.11+ (`requires-python = ">=3.11"`).
+- Python 3.12+ (`requires-python = ">=3.12"`).
 
 > [!NOTE]
 > `PyGObject` is also a dependency, but is normally supplied by the distribution, case not,
@@ -229,6 +229,33 @@ GnomeWindowController(exclude_apps=())                  # nothing excluded
 GnomeWindowController(exclude_apps=("floorp", "Slack"))  # exactly these
 ```
 
+**--workspace**
+
+```
+--workspace [current|prefer-current|any]
+```
+
+```sh
+gnome-window-controller --chfocus win same_monitor --workspace current
+gnome-window-controller --chfocus right --workspace prefer-current
+```
+
+How focus commands treat windows sitting on another workspace:
+
+| Scope | Effect |
+| --- | --- |
+| `current` | only windows on the workspace in view; if there are none, nothing happens |
+| `prefer-current` | the same, falling back to every workspace when this one holds nothing focusable |
+| `any` | no weighting; workspace is ignored |
+
+Left out, each command keeps the default it has always had: `--chfocus win same_monitor` stays on
+the current workspace (that is `prefer-current`), everything else ignores workspaces. Passing
+`--workspace any` is what turns that preference off.
+
+The scope narrows the candidate pool without reordering it, so it composes with whatever a
+command means by "the next window" — the ring `--chfocus win` walks, and the topmost window
+`--chfocus right` lands on, both keep their meaning.
+
 **--chfocus**
 
 ```
@@ -245,7 +272,7 @@ GnomeWindowController(exclude_apps=("floorp", "Slack"))  # exactly these
 | `up` / `down`    | —                                   | move focus one monitor up/down, wrapping                |
 | `last`           | —                                   | focus the previously focused window                     |
 
-Everyone of them honors `--exclude`.
+Everyone of them honours `--exclude`.
 
 **Monitor layouts**
 

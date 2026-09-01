@@ -30,6 +30,7 @@ except ImportError:
 __all__ = [
     "DEFAULT_EXCLUDED_APPS",
     "MONITOR_DIRECTIONS",
+    "WORKSPACE_SCOPES",
     "DBusError",
     "GnomeWindowController",
     "WindowControllerError",
@@ -49,6 +50,27 @@ MONITOR_DIRECTIONS = ("left", "right", "up", "down")
 #: Windows no focus command lands on unless the caller clears the list. A Picture-in-Picture
 #: overlay floats above everything and is virtually never what a focus shortcut is reaching for.
 DEFAULT_EXCLUDED_APPS = ("Picture-in-Picture",)
+
+#: How a focus command treats windows sitting on another workspace.
+#:
+#: ``current``
+#:     Only windows on the workspace in view; nothing else is reachable.
+#: ``prefer-current``
+#:     The same, falling back to every workspace when this one holds nothing focusable, so a
+#:     shortcut never quietly becomes a no-op.
+#: ``any``
+#:     No weighting at all; workspace is ignored.
+WORKSPACE_SCOPES = ("current", "prefer-current", "any")
+
+#: Spellings accepted alongside :data:`WORKSPACE_SCOPES`.
+_WORKSPACE_ALIASES = {
+    "current-workspace": "current",
+    "here": "current",
+    "prefer": "prefer-current",
+    "prefer_current": "prefer-current",
+    "priority": "prefer-current",
+    "all": "any",
+}
 
 #: Spellings accepted alongside :data:`MONITOR_DIRECTIONS`. The integers are what
 #: ``cycle_monitors`` took before it grew vertical directions.
@@ -155,6 +177,46 @@ def normalize_direction(direction: int | str) -> str:
         return _DIRECTION_ALIASES[name]
     raise ValueError(
         f"unknown monitor direction {direction!r}; expected one of {', '.join(MONITOR_DIRECTIONS)}",
+    )
+
+
+def normalize_workspace_scope(scope: str) -> str:
+    """
+    Map any accepted spelling of a workspace scope onto one of :data:`WORKSPACE_SCOPES`.
+
+    Parameters
+    ----------
+    scope : str
+        ``"current"``, ``"prefer-current"``, ``"any"``, or one of the aliases in
+        :data:`_WORKSPACE_ALIASES`.
+
+    Returns
+    -------
+    str
+        The canonical scope name.
+
+    Raises
+    ------
+    ValueError
+        If `scope` names no known scope.
+
+    Examples
+    --------
+    >>> normalize_workspace_scope("current")
+    'current'
+    >>> normalize_workspace_scope("PREFER")
+    'prefer-current'
+    >>> normalize_workspace_scope("all")
+    'any'
+
+    """
+    name = str(scope).strip().lower()
+    if name in WORKSPACE_SCOPES:
+        return name
+    if name in _WORKSPACE_ALIASES:
+        return _WORKSPACE_ALIASES[name]
+    raise ValueError(
+        f"unknown workspace scope {scope!r}; expected one of {', '.join(WORKSPACE_SCOPES)}",
     )
 
 
@@ -441,6 +503,11 @@ class GnomeWindowController:
         case-insensitive substring of a window's wm_class, instance or title. Listing and
         inspection are unaffected. Defaults to :data:`DEFAULT_EXCLUDED_APPS`; pass ``()`` for
         none.
+    workspace_scope : str, optional
+        One of :data:`WORKSPACE_SCOPES`, applied to every focus command. ``None``, the default,
+        leaves each command its own historical behaviour: only
+        :meth:`focus_same_monitor_window` stays on the current workspace, the rest ignore
+        workspaces entirely.
     windows_fallback : bool, optional
         Retry window queries against the deprecated Window Calls extension when the bundled one
         does not answer. Only useful between installing a new extension version and the log in
@@ -456,6 +523,7 @@ class GnomeWindowController:
     highlight_on_focus : bool, default True
     windows_fallback : bool, default True
     exclude_apps : sequence of str, default DEFAULT_EXCLUDED_APPS
+    workspace_scope : str or None, default None
     highlight : gnome_window_controller.highlight.WindowHighlighter
     _gio : gi.overrides.OverridesProxyModule
     _glib : gi.overrides.OverridesProxyModule
@@ -478,6 +546,7 @@ class GnomeWindowController:
     highlight_on_focus: bool = True
     windows_fallback: bool = True
     exclude_apps: Sequence[str] = DEFAULT_EXCLUDED_APPS
+    workspace_scope: str | None = None
 
     # Internal lazy state (do not set manually)
     _gio: Any = field(default=None, init=False, repr=False)
@@ -1655,7 +1724,7 @@ class GnomeWindowController:
         int or None
             Focused window id, or None if none could be focused.
         """
-        windows = self.focusable(self.list_windows())
+        windows = self.by_workspace(self.focusable(self.list_windows()))
         if not windows:
             return None
 
@@ -1741,7 +1810,9 @@ class GnomeWindowController:
         windows = self.list_windows()
         if not windows:
             return None
-        windows = self.focusable(self.relabel_monitors_via_details(windows), extra)
+        windows = self.by_workspace(
+            self.focusable(self.relabel_monitors_via_details(windows), extra),
+        )
         if not windows:
             return None
 
@@ -1798,7 +1869,9 @@ class GnomeWindowController:
             return None
 
         # Ensure accurate monitor labels via Details(id).
-        windows = self.focusable(self.relabel_monitors_via_details(windows), exclude_titles or ())
+        windows = self.by_workspace(
+            self.focusable(self.relabel_monitors_via_details(windows), exclude_titles or ()),
+        )
         if not windows:
             return None
 
@@ -1820,9 +1893,11 @@ class GnomeWindowController:
         int or None
             Focused window id, or None if none could be focused.
         """
-        windows = self.focusable([
-            w for w in self.list_windows() if not any(bool(w.get(k)) for k in FOCUS_KEYS)
-        ])
+        windows = self.by_workspace(
+            self.focusable([
+                w for w in self.list_windows() if not any(bool(w.get(k)) for k in FOCUS_KEYS)
+            ]),
+        )
         if not windows:
             return None
         return self._activate_safe(_as_int(windows[-1]["id"]))
@@ -1903,8 +1978,10 @@ class GnomeWindowController:
                 if elsewhere:
                     return self._activate_safe(_as_int(elsewhere[0].get("id")))
             else:
-                here = [w for w in candidates if w.get("in_current_workspace", False)]
-                candidates = here or candidates
+                # Alone among the focus commands, this one has always stayed on the workspace in
+                # view, falling back to the whole monitor when nothing here is focusable -- which
+                # is exactly `prefer-current`. An explicit scope replaces that, `any` included.
+                candidates = self.by_workspace(candidates, self.workspace_scope or "prefer-current")
         else:
             candidates = windows
 
@@ -1967,6 +2044,84 @@ class GnomeWindowController:
             return list(windows)
         return [w for w in windows if not any(self._matches(name, w) for name in names)]
 
+    def by_workspace(
+        self,
+        windows: Sequence[dict[str, Any]],
+        scope: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """
+        Filter or reorder a candidate pool by workspace.
+
+        A window's ``in_current_workspace`` flag comes from the listing, so this costs no extra
+        D-Bus call.
+
+        Parameters
+        ----------
+        windows : sequence of dict
+            Entries as returned by `list_windows()`.
+        scope : str, optional
+            One of :data:`WORKSPACE_SCOPES`. Defaults to :attr:`workspace_scope`, and to
+            ``"any"`` when that is unset too.
+
+        Returns
+        -------
+        list of dict
+            The candidates a focus command may consider, in their original order.
+            ``"current"`` can return an empty list, which is the honest answer when the
+            workspace in view holds nothing focusable.
+
+        Raises
+        ------
+        ValueError
+            If `scope` names no known scope.
+
+        Notes
+        -----
+        This narrows a pool, it never reorders one. Commands pick from their candidates in ways
+        that depend on the order they were listed in -- the topmost window on a monitor is the
+        last entry, the focus ring walks by window id -- so interleaving the two workspaces here
+        would quietly change what "the next window" means.
+
+        Examples
+        --------
+        >>> gnome_win = GnomeWindowController()
+        >>> pool = [
+        ...     {"id": 1, "in_current_workspace": False},
+        ...     {"id": 2, "in_current_workspace": True},
+        ...     {"id": 3, "in_current_workspace": False},
+        ...     {"id": 4, "in_current_workspace": True},
+        ... ]
+        >>> [w["id"] for w in gnome_win.by_workspace(pool, "any")]
+        [1, 2, 3, 4]
+        >>> [w["id"] for w in gnome_win.by_workspace(pool, "current")]
+        [2, 4]
+        >>> [w["id"] for w in gnome_win.by_workspace(pool, "prefer-current")]
+        [2, 4]
+
+        Nothing on this workspace, so ``prefer-current`` gives everything back rather than
+        leaving the caller with an empty pool:
+
+        >>> elsewhere = [{"id": 9, "in_current_workspace": False}]
+        >>> [w["id"] for w in gnome_win.by_workspace(elsewhere, "prefer-current")]
+        [9]
+        >>> gnome_win.by_workspace(elsewhere, "current")
+        []
+
+        """
+        if scope is None:
+            scope = self.workspace_scope
+        if scope is None:
+            return list(windows)
+
+        name = normalize_workspace_scope(scope)
+        if name == "any":
+            return list(windows)
+
+        here = [w for w in windows if w.get("in_current_workspace", False)]
+        if name == "current":
+            return here
+        return here or list(windows)
+
     def _idx_of(self, seq: list[dict[str, Any]], wid: int | None) -> int | None:
         """
         Return the position of the window with id `wid` inside `seq`.
@@ -1996,7 +2151,7 @@ class GnomeWindowController:
         int or None
             Focused window id, or None when the focused app owns a single window.
         """
-        windows = self.focusable(self.list_windows())
+        windows = self.by_workspace(self.focusable(self.list_windows()))
         if not windows:
             return None
 

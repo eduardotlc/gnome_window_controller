@@ -19,6 +19,7 @@ from .errors import HighlightError, WindowControllerError
 from .gnome_window_controller import (
     DEFAULT_EXCLUDED_APPS,
     MONITOR_DIRECTIONS,
+    WORKSPACE_SCOPES,
     GnomeWindowController,
 )
 from .highlight import HIGHLIGHT_MODES, HighlightOptions
@@ -61,6 +62,8 @@ examples:
   gnome_window_controller --chfocus right
   gnome_window_controller --chfocus up             # monitor above, on a stacked layout
   gnome_window_controller --chfocus win --exclude Slack --exclude mail
+  gnome_window_controller --chfocus win same_monitor --workspace current
+  gnome_window_controller --chfocus right --workspace prefer-current
   gnome_window_controller --chfocus win same_app
   gnome_window_controller --highlight install
   gnome_window_controller --highlight on --highlight-color '#fb4934' --highlight-width 4
@@ -160,6 +163,18 @@ def build_parser() -> argparse.ArgumentParser:
         choices=("any", "current-monitor", "other-monitor"),
         default="other-monitor",
         help="Which monitor --focus searches. Default: other-monitor.",
+    )
+
+    focus.add_argument(
+        "--workspace",
+        choices=WORKSPACE_SCOPES,
+        metavar="SCOPE",
+        help=(
+            "How focus commands treat other workspaces. 'current': only windows on the "
+            "workspace in view. 'prefer-current': those first, then the rest. 'any': no "
+            "weighting. Left out, each command keeps its own default -- only "
+            "`--chfocus win same_monitor` stays on the current workspace."
+        ),
     )
 
     focus.add_argument(
@@ -631,6 +646,7 @@ def main(argv: list[str] | None = None) -> int:
     ctl = GnomeWindowController(
         highlight_on_focus=not args.no_highlight,
         exclude_apps=(*DEFAULT_EXCLUDED_APPS, *(args.exclude or ())),
+        workspace_scope=args.workspace,
     )
 
     try:

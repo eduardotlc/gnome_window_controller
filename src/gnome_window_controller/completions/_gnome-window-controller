@@ -75,6 +75,10 @@ _gnome_window_controller() {
         always\:"color even when piped"
         never\:"never color"))' \
     '--focus=[focus a window by wm_class, instance or title]:needle:_gwc_window_names::more:_gwc_window_names' \
+    '--workspace=[how focus commands treat other workspaces]:scope:((
+        current\:"only windows on the workspace in view"
+        prefer-current\:"those, falling back to every workspace when this one is empty"
+        any\:"no weighting; workspace is ignored"))' \
     '*--exclude=[never focus a window whose class or title contains NAME]:name:_gwc_window_names' \
     '--scope=[which monitor --focus searches]:scope:((
         any\:"every monitor"

@@ -16,7 +16,9 @@ __version__ = "1.2.1"
 
 __all__ = [
     "COLORS",
+    "DEFAULT_EXCLUDED_APPS",
     "MONITOR_DIRECTIONS",
+    "WORKSPACE_SCOPES",
     "DBusError",
     "GnomeWindowController",
     "HighlightError",
@@ -29,6 +31,7 @@ __all__ = [
     "main",
     "neighbor_monitor",
     "normalize_direction",
+    "normalize_workspace_scope",
 ]
 
 
@@ -65,9 +68,12 @@ def __getattr__(name: str) -> object:
     if name in {
         "GnomeWindowController",
         "MONITOR_DIRECTIONS",
+        "DEFAULT_EXCLUDED_APPS",
+        "WORKSPACE_SCOPES",
         "cycle_monitor",
         "neighbor_monitor",
         "normalize_direction",
+        "normalize_workspace_scope",
     }:
         from . import gnome_window_controller as module
 
